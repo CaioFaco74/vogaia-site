@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 import "./globals.css";
 
 const inter = Inter({
@@ -105,6 +106,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <WhatsAppButton />
       </body>
     </html>
   );

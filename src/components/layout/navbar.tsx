@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -21,10 +22,15 @@ export function Navbar() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-bg-primary/95 backdrop-blur-md border-b border-border-subtle">
       <nav className="max-w-[1280px] mx-auto px-6 md:px-12 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-text-primary">
-            Voga<span className="text-orange-primary">IA</span>
-          </span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="VogaIA"
+            width={160}
+            height={52}
+            className="h-30 w-auto"
+            priority
+          />
         </Link>
 
         {/* Desktop Navigation */}

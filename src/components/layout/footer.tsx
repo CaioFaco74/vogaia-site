@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, Phone, MapPin } from "lucide-react";
 
 const footerLinks = {
@@ -28,9 +29,13 @@ export function Footer() {
           {/* Brand */}
           <div>
             <Link href="/" className="inline-block mb-4">
-              <span className="text-xl font-bold text-text-primary">
-                Voga<span className="text-orange-primary">IA</span>
-              </span>
+              <Image
+                src="/logo.png"
+                alt="VogaIA"
+                width={180}
+                height={60}
+                className="h-30 w-auto"
+              />
             </Link>
             <p className="text-text-muted text-sm leading-relaxed mb-6">
               Soluções de inteligência artificial que transformam a operação do
