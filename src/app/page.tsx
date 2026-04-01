@@ -66,11 +66,11 @@ export default function Home() {
           </p>
           <div className="flex items-center justify-center gap-10 md:gap-16 flex-wrap">
             {[
-              { src: "/logos/transtop.png", alt: "TransTop", h: "h-8" },
-              { src: "/logos/nordplast.jpeg", alt: "NordPlast", h: "h-12" },
-              { src: "/logos/polimatec.jpeg", alt: "Polimatec", h: "h-12" },
-              { src: "/logos/impacto.png", alt: "Impacto Proteção", h: "h-10" },
-              { src: "/logos/agilean.png", alt: "Agilean", h: "h-10" },
+              { src: "/logos/transtop.png", alt: "TransTop", h: "h-14" },
+              { src: "/logos/nordplast.jpeg", alt: "NordPlast", h: "h-18" },
+              { src: "/logos/polimatec.jpeg", alt: "Polimatec", h: "h-18" },
+              { src: "/logos/impacto.png", alt: "Impacto Proteção", h: "h-16" },
+              { src: "/logos/agilean.png", alt: "Agilean", h: "h-16" },
             ].map((logo) => (
               <Image
                 key={logo.alt}
@@ -78,7 +78,7 @@ export default function Home() {
                 alt={logo.alt}
                 width={140}
                 height={48}
-                className={`${logo.h} w-auto object-contain brightness-0 invert opacity-60 hover:opacity-100 transition-opacity`}
+                className={`${logo.h} w-auto object-contain rounded-lg opacity-70 hover:opacity-100 transition-opacity`}
               />
             ))}
           </div>
