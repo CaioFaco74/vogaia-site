@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -57,18 +58,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* LOGOS - Placeholder para quando tiver logos de clientes */}
+      {/* LOGOS DE CLIENTES */}
       <section className="py-12 border-y border-border-subtle bg-bg-secondary/50">
         <div className="max-w-[1280px] mx-auto px-6 md:px-12">
           <p className="text-center text-sm text-text-disabled uppercase tracking-widest mb-8">
             Empresas que confiam na VogaIA
           </p>
-          <div className="flex items-center justify-center gap-12 flex-wrap opacity-40">
-            {/* Placeholder logos — substituir por logos reais */}
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-24 h-8 bg-text-muted/20 rounded"
+          <div className="flex items-center justify-center gap-10 md:gap-16 flex-wrap">
+            {[
+              { src: "/logos/transtop.png", alt: "TransTop", h: "h-8" },
+              { src: "/logos/nordplast.jpeg", alt: "NordPlast", h: "h-12" },
+              { src: "/logos/polimatec.jpeg", alt: "Polimatec", h: "h-12" },
+              { src: "/logos/impacto.png", alt: "Impacto Proteção", h: "h-10" },
+              { src: "/logos/agilean.png", alt: "Agilean", h: "h-10" },
+            ].map((logo) => (
+              <Image
+                key={logo.alt}
+                src={logo.src}
+                alt={logo.alt}
+                width={140}
+                height={48}
+                className={`${logo.h} w-auto object-contain brightness-0 invert opacity-60 hover:opacity-100 transition-opacity`}
               />
             ))}
           </div>
