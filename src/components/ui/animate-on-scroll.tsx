@@ -7,7 +7,7 @@ interface AnimateOnScrollProps {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  direction?: "up" | "down" | "left" | "right";
+  direction?: "up" | "down" | "left" | "right" | "none";
 }
 
 export function AnimateOnScroll({
@@ -24,6 +24,7 @@ export function AnimateOnScroll({
     down: { y: -30, x: 0 },
     left: { y: 0, x: 30 },
     right: { y: 0, x: -30 },
+    none: { y: 0, x: 0 },
   };
 
   return (

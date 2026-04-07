@@ -1,6 +1,7 @@
 "use client";
 
 import { SITE } from "@/lib/constants";
+import { trackWhatsAppClick } from "@/lib/tracking";
 
 export function WhatsAppButton() {
   return (
@@ -8,6 +9,7 @@ export function WhatsAppButton() {
       href={SITE.whatsappLink}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => trackWhatsAppClick("floating_button")}
       className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 bg-[#25D366] rounded-full shadow-lg shadow-[#25D366]/30 hover:scale-110 hover:shadow-xl transition-all duration-200"
       aria-label="Falar pelo WhatsApp"
     >

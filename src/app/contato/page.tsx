@@ -8,6 +8,7 @@ import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/constants";
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react";
+import { trackFormSubmit, trackWhatsAppClick, trackCTAClick } from "@/lib/tracking";
 
 const contactSchema = z.object({
   nome: z.string().min(2, "Nome é obrigatório"),
@@ -43,8 +44,32 @@ export default function ContatoPage() {
   });
 
   async function onSubmit(data: ContactFormData) {
-    // TODO: Integrar com Make webhook para envio de email
-    console.log("Form data:", data);
+    // Tracking GA4 + Meta Pixel
+    trackFormSubmit({
+      servico: data.servico,
+      funcionarios: data.funcionarios,
+      comoEncontrou: data.comoEncontrou,
+    });
+
+    // Enviar para Make webhook
+    try {
+      await fetch(
+        "https://hook.us1.make.com/lzoiiytwu71gjywwwdc3elog4h8dttsj",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "site_vogaia",
+            ...data,
+            timestamp: new Date().toISOString(),
+          }),
+        }
+      );
+    } catch {
+      // Falha silenciosa — formulário ainda mostra sucesso
+      // O tracking já foi disparado
+    }
+
     setSubmitted(true);
   }
 
@@ -338,6 +363,7 @@ export default function ContatoPage() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full"
+                onClick={() => trackWhatsAppClick("contato_sidebar")}
               >
                 Chamar no WhatsApp
               </Button>

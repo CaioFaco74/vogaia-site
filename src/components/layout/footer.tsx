@@ -32,9 +32,9 @@ export function Footer() {
               <Image
                 src="/logo.png"
                 alt="VogaIA"
-                width={180}
-                height={60}
-                className="h-30 w-auto"
+                width={130}
+                height={71}
+                className="h-9 w-auto"
               />
             </Link>
             <p className="text-text-muted text-sm leading-relaxed mb-6">
