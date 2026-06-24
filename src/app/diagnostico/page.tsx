@@ -60,7 +60,7 @@ export default function DiagnosticoPage() {
 
     // Enviar para Make webhook (mesmo do contato)
     try {
-      await fetch(
+      const res = await fetch(
         "https://hook.us1.make.com/lzoiiytwu71gjywwwdc3elog4h8dttsj",
         {
           method: "POST",
@@ -75,8 +75,14 @@ export default function DiagnosticoPage() {
           }),
         }
       );
-    } catch {
-      // Falha silenciosa
+      if (!res.ok) throw new Error(`Webhook respondeu ${res.status}`);
+    } catch (err) {
+      // Não perder o lead em silêncio: registra para monitoramento (GA4/alertas)
+      console.error("Falha ao enviar diagnóstico para o Make:", err);
+      trackEvent("diagnostico_submit_error", {
+        form_name: "diagnostico",
+        error: err instanceof Error ? err.message : "unknown",
+      });
     }
 
     setSubmitted(true);
@@ -171,7 +177,7 @@ export default function DiagnosticoPage() {
                 <div>
                   <p className="text-white font-semibold">Resultado real</p>
                   <p className="text-[#6B6B80] text-sm">
-                    11 projetos em 7 verticais. NordPlast reduziu tempo de resposta de 14h para 3min.
+                    9 projetos entregues em diferentes setores. Uma indústria de plásticos reduziu o tempo de resposta a leads de 14h para 3min.
                   </p>
                 </div>
               </div>
@@ -187,7 +193,7 @@ export default function DiagnosticoPage() {
                   />
                 ))}
               </div>
-              Empresas como NordPlast, Polimatec e TransTop já fizeram
+              Indústrias de plásticos, metalurgia e transporte já fizeram
             </div>
           </div>
 
@@ -295,7 +301,7 @@ export default function DiagnosticoPage() {
                   "Enviando..."
                 ) : (
                   <>
-                    QUERO MEU DIAGNOSTICO
+                    QUERO MEU DIAGNÓSTICO
                     <ArrowRight size={20} />
                   </>
                 )}
