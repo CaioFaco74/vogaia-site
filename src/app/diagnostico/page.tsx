@@ -70,6 +70,7 @@ export default function DiagnosticoPage() {
             servico: "diagnostico-ia",
             comoEncontrou: utmParams.utm_source || "direto",
             ...data,
+            telefone: data.whatsapp,
             ...utmParams,
             timestamp: new Date().toISOString(),
           }),
