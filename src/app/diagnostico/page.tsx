@@ -24,6 +24,16 @@ const inputStyles =
 const labelStyles = "block text-sm font-medium text-[#B8B8CC] mb-2";
 const errorStyles = "text-xs text-red-400 mt-1";
 
+// Normaliza telefone BR para E.164 (55 + DDD + 9 + 8 dígitos), formato que o Z-API/Ana espera.
+function normalizePhone(raw: string): string {
+  const d = (raw || "").replace(/\D/g, "");
+  if (d.startsWith("55") && d.length === 13) return d;                       // já completo
+  if (d.startsWith("55") && d.length === 12) return d.slice(0, 4) + "9" + d.slice(4); // 55+DDD+8 → insere 9
+  if (d.length === 11) return "55" + d;                                      // DDD+9+8 → add 55
+  if (d.length === 10) return "55" + d.slice(0, 2) + "9" + d.slice(2);       // DDD+8 → add 55 e 9
+  return !d || d.startsWith("55") ? d : "55" + d;                            // fallback
+}
+
 export default function DiagnosticoPage() {
   const [submitted, setSubmitted] = useState(false);
   const [utmParams, setUtmParams] = useState<Record<string, string>>({});
@@ -70,7 +80,7 @@ export default function DiagnosticoPage() {
             servico: "diagnostico-ia",
             comoEncontrou: utmParams.utm_source || "direto",
             ...data,
-            telefone: data.whatsapp,
+            telefone: normalizePhone(data.whatsapp),
             ...utmParams,
             timestamp: new Date().toISOString(),
           }),
