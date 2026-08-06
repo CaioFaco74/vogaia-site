@@ -27,18 +27,56 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
+      # A conexão SSH com a Hostinger falha de forma intermitente
+      # (Connection timed out — ocorreu em 06/08/2026). Sem retry, um timeout
+      # de rede deixa produção desatualizada em silêncio: o job falha DEPOIS
+      # do build, então nada é publicado e o site fica no estado anterior.
       - name: Deploy via rsync (preserva /posts/)
         env:
           SSHPASS: ${{ secrets.HOSTINGER_PASSWORD }}
+          HOST: ${{ secrets.HOSTINGER_HOST }}
+          USER: ${{ secrets.HOSTINGER_USER }}
+          PORT: ${{ secrets.HOSTINGER_PORT }}
         run: |
-          sshpass -e rsync -avz --delete --exclude=posts/ \
-            -e "ssh -p ${{ secrets.HOSTINGER_PORT }} -o StrictHostKeyChecking=no" \
-            out/ "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}:~/domains/vogaia.com.br/public_html/"
+          for TENTATIVA in 1 2 3; do
+            echo "::group::rsync — tentativa $TENTATIVA de 3"
+            if sshpass -e rsync -avz --delete --exclude=posts/ \
+                 -e "ssh -p $PORT -o StrictHostKeyChecking=no -o ConnectTimeout=30" \
+                 out/ "$USER@$HOST:~/domains/vogaia.com.br/public_html/"; then
+              echo "::endgroup::"
+              echo "rsync concluído na tentativa $TENTATIVA."
+              exit 0
+            fi
+            echo "::endgroup::"
+            echo "Tentativa $TENTATIVA falhou."
+            [ "$TENTATIVA" -lt 3 ] && sleep $((TENTATIVA * 20))
+          done
+          echo "::error::rsync falhou nas 3 tentativas — produção NÃO foi atualizada."
+          exit 1
 
       - name: Ajustar permissoes
         env:
           SSHPASS: ${{ secrets.HOSTINGER_PASSWORD }}
+          HOST: ${{ secrets.HOSTINGER_HOST }}
+          USER: ${{ secrets.HOSTINGER_USER }}
+          PORT: ${{ secrets.HOSTINGER_PORT }}
         run: |
-          sshpass -e ssh -p ${{ secrets.HOSTINGER_PORT }} -o StrictHostKeyChecking=no \
-            "${{ secrets.HOSTINGER_USER }}@${{ secrets.HOSTINGER_HOST }}" \
-            'find ~/domains/vogaia.com.br/public_html -type d -exec chmod 755 {} \; && find ~/domains/vogaia.com.br/public_html -type f -exec chmod 644 {} \;'
+          for TENTATIVA in 1 2 3; do
+            if sshpass -e ssh -p "$PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
+                 "$USER@$HOST" \
+                 'find ~/domains/vogaia.com.br/public_html -type d -exec chmod 755 {} \; && find ~/domains/vogaia.com.br/public_html -type f -exec chmod 644 {} \;'; then
+              echo "Permissões ajustadas na tentativa $TENTATIVA."
+              exit 0
+            fi
+            echo "Tentativa $TENTATIVA falhou."
+            [ "$TENTATIVA" -lt 3 ] && sleep $((TENTATIVA * 20))
+          done
+          echo "::error::ajuste de permissões falhou nas 3 tentativas."
+          exit 1
+
+      - name: Verificar que o site respondeu depois do deploy
+        run: |
+          sleep 5
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 https://vogaia.com.br/)
+          echo "https://vogaia.com.br/ -> $CODE"
+          [ "$CODE" = "200" ] || { echo "::error::site não respondeu 200 após o deploy"; exit 1; }
