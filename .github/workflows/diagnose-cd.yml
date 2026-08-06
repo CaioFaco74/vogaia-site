@@ -1,0 +1,61 @@
+name: Diagnose CD
+
+# Workflow TEMPORÁRIO de diagnóstico da falha de conexão SSH do deploy.
+# Não altera nada em produção: só testa conectividade e imprime OK/FAIL.
+# Nunca imprime o valor dos secrets — apenas comparações e códigos de saída.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: IP publico do runner
+        run: curl -s --max-time 10 https://api.ipify.org || echo "(nao obtido)"
+
+      - name: O host do secret resolve para o IP que usamos localmente?
+        env:
+          HOST: ${{ secrets.HOSTINGER_HOST }}
+        run: |
+          RESOLVED=$(getent hosts "$HOST" | awk '{print $1}' | head -1)
+          if [ -z "$RESOLVED" ]; then
+            echo "RESULTADO: host NAO resolve (DNS falhou ou secret vazio)"
+          elif [ "$RESOLVED" = "185.245.180.175" ]; then
+            echo "RESULTADO: IP_CONFERE com o que funciona localmente"
+          else
+            echo "RESULTADO: IP_DIFERENTE do que funciona localmente"
+          fi
+
+      - name: Porta do secret esta aberta?
+        env:
+          HOST: ${{ secrets.HOSTINGER_HOST }}
+          PORT: ${{ secrets.HOSTINGER_PORT }}
+        run: |
+          if timeout 15 bash -c "cat < /dev/null > /dev/tcp/$HOST/$PORT" 2>/dev/null; then
+            echo "RESULTADO: porta do secret ABERTA"
+          else
+            echo "RESULTADO: porta do secret FECHADA/TIMEOUT"
+          fi
+
+      - name: A porta 65002 (a que uso localmente) esta aberta?
+        run: |
+          if timeout 15 bash -c "cat < /dev/null > /dev/tcp/185.245.180.175/65002" 2>/dev/null; then
+            echo "RESULTADO: 65002 ABERTA a partir do runner"
+          else
+            echo "RESULTADO: 65002 FECHADA/TIMEOUT a partir do runner"
+          fi
+
+      - name: E a porta 22 e a 443 (controle)?
+        run: |
+          for P in 22 443; do
+            if timeout 15 bash -c "cat < /dev/null > /dev/tcp/185.245.180.175/$P" 2>/dev/null; then
+              echo "porta $P: ABERTA"
+            else
+              echo "porta $P: FECHADA/TIMEOUT"
+            fi
+          done
+
+      - name: O servidor responde a HTTPS a partir do runner? (prova que a rota existe)
+        run: |
+          curl -s -o /dev/null -w "https://vogaia.com.br -> %{http_code}\n" --max-time 20 https://vogaia.com.br/ || echo "curl falhou"
