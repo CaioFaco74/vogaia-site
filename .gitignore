@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Deploy manual de emergência (contém host/usuário/porta de produção)
+deploy.sh

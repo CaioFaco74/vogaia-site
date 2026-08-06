@@ -11,31 +11,17 @@ function getConsent(): ConsentStatus {
   return localStorage.getItem(CONSENT_KEY) as ConsentStatus;
 }
 
-function loadGA4() {
-  if (document.getElementById("ga4-script")) return;
-  const script = document.createElement("script");
-  script.id = "ga4-script";
-  script.async = true;
-  script.src = "https://www.googletagmanager.com/gtag/js?id=G-EHPFZ42VEN";
-  document.head.appendChild(script);
-
-  /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function updateGTMConsent(granted: boolean) {
   const w = window as any;
   w.dataLayer = w.dataLayer || [];
-  function gtag(...args: any[]) {
-    w.dataLayer.push(args);
-  }
-  w.gtag = gtag;
-  gtag("js", new Date());
-  gtag("config", "G-EHPFZ42VEN");
-}
-
-function loadMetaPixel() {
-  if (document.getElementById("meta-pixel-script")) return;
-  const script = document.createElement("script");
-  script.id = "meta-pixel-script";
-  script.innerHTML = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','726162829402207');fbq('track','PageView');`;
-  document.head.appendChild(script);
+  w.dataLayer.push(["consent", "update", {
+    ad_storage: granted ? "granted" : "denied",
+    ad_user_data: granted ? "granted" : "denied",
+    ad_personalization: granted ? "granted" : "denied",
+    analytics_storage: granted ? "granted" : "denied",
+  }]);
+  w.dataLayer.push({ event: granted ? "consent_accepted" : "consent_rejected" });
 }
 
 export function CookieConsent() {
@@ -44,9 +30,10 @@ export function CookieConsent() {
   useEffect(() => {
     const consent = getConsent();
     if (consent === "accepted") {
-      loadGA4();
-      loadMetaPixel();
-    } else if (consent === null) {
+      updateGTMConsent(true);
+    } else if (consent === "rejected") {
+      updateGTMConsent(false);
+    } else {
       setVisible(true);
     }
   }, []);
@@ -54,13 +41,13 @@ export function CookieConsent() {
   function accept() {
     localStorage.setItem(CONSENT_KEY, "accepted");
     setVisible(false);
-    loadGA4();
-    loadMetaPixel();
+    updateGTMConsent(true);
   }
 
   function reject() {
     localStorage.setItem(CONSENT_KEY, "rejected");
     setVisible(false);
+    updateGTMConsent(false);
   }
 
   if (!visible) return null;

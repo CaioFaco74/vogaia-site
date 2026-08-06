@@ -1,25 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const w = typeof window !== "undefined" ? (window as any) : null;
 
+function pushDataLayer(payload: Record<string, unknown>) {
+  if (!w) return;
+  w.dataLayer = w.dataLayer || [];
+  w.dataLayer.push(payload);
+}
+
 export function trackEvent(
   eventName: string,
   params?: Record<string, string | number | boolean>
 ) {
-  if (w?.gtag) {
-    w.gtag("event", eventName, params);
-  }
+  pushDataLayer({ event: eventName, ...(params || {}) });
 }
 
 export function trackMetaEvent(
   eventName: string,
   params?: Record<string, string | number | boolean>
 ) {
-  if (w?.fbq) {
-    w.fbq("track", eventName, params);
-  }
+  pushDataLayer({
+    event: "meta_pixel_event",
+    meta_event_name: eventName,
+    ...(params || {}),
+  });
 }
 
-// CTAs
 export function trackCTAClick(ctaName: string, location: string) {
   trackEvent("cta_click", {
     cta_name: ctaName,
@@ -27,7 +32,6 @@ export function trackCTAClick(ctaName: string, location: string) {
   });
 }
 
-// WhatsApp
 export function trackWhatsAppClick(location: string) {
   trackEvent("whatsapp_click", {
     cta_location: location,
@@ -38,7 +42,6 @@ export function trackWhatsAppClick(location: string) {
   });
 }
 
-// Formulário enviado
 export function trackFormSubmit(formData: {
   servico: string;
   funcionarios: string;

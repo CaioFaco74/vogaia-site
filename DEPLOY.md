@@ -1,77 +1,81 @@
-# Deploy na Hostinger — VogaIA
+# Deploy do site VogaIA na Hostinger
 
-## Pré-requisitos
-- Conta Hostinger Premium Web Hosting
-- Domínio vogaia.com.br apontado para a conta
-- Acesso ao File Manager ou FTP
+## Processo recomendado (automatizado)
 
-## Processo de Deploy
-
-### 1. Build do site
 ```bash
-cd /Users/caiofaco/Documents/VogaIA/renovacao-site/vogaia-site
+cd ~/projetos/vogaia-site
+./deploy.sh
+```
+
+O script faz build + rsync com `--exclude=posts/` + ajuste de permissoes em um passo.
+
+## ATENCAO — pasta `/posts/` nao pode ser apagada
+
+A pasta `~/domains/vogaia.com.br/public_html/posts/` **NAO** faz parte do build do site. Ela e alimentada pelo pipeline de postagem automatizado (orchestrator.py rodando na VM GCP) que renderiza imagens dos posts de IG/FB/LinkedIn e faz rsync para la.
+
+O deploy do site usa `rsync -avz --delete`. **Sem o `--exclude=posts/`**, o rsync apaga essa pasta toda e:
+
+- Os proximos carousels falham com HTTP 404 no publish
+- Imagens ja publicadas no IG/FB quebram (Meta cachea mas nao infinitamente)
+- O orchestrator detecta 404 e tenta reupload, mas se a pasta nem existir, falha com `rsync: change_dir failed: No such file or directory`
+
+**Sempre que editar o comando de deploy manualmente, mantenha o `--exclude=posts/`.**
+
+## Processo manual (se precisar rodar sem o script)
+
+```bash
+cd ~/projetos/vogaia-site
 npm run build
+
+SSHPASS='Ca221074@' sshpass -e rsync -avz --delete \
+  --exclude=posts/ \
+  -e 'ssh -p 65002 -o StrictHostKeyChecking=no' \
+  out/ u564158865@185.245.180.175:~/domains/vogaia.com.br/public_html/
+
+SSHPASS='Ca221074@' sshpass -e ssh -p 65002 -o StrictHostKeyChecking=no \
+  u564158865@185.245.180.175 \
+  'find ~/domains/vogaia.com.br/public_html -type d -exec chmod 755 {} \; \
+   && find ~/domains/vogaia.com.br/public_html -type f -exec chmod 644 {} \;'
 ```
-Isso gera a pasta `out/` com todos os arquivos estáticos.
 
-### 2. Upload para Hostinger
+## Credenciais Hostinger
 
-**Opção A — File Manager (mais simples):**
-1. Acesse hPanel → Files → File Manager
-2. Navegue até `public_html/`
-3. Delete o conteúdo antigo (ou mova para backup)
-4. Faça upload de TODO o conteúdo da pasta `out/` para `public_html/`
-5. Certifique-se de que `index.html` está na raiz de `public_html/`
+- **Host:** 185.245.180.175 (porta SSH 65002)
+- **User:** u564158865
+- **Diretorio:** ~/domains/vogaia.com.br/public_html/
+- **Senha:** em `~/.claude/projects/-Users-caiofaco/memory/hostinger-vogaia.md`
 
-**Opção B — FTP:**
-1. Use FileZilla ou similar
-2. Host: seu-dominio ou IP da Hostinger
-3. User/Pass: credenciais FTP do hPanel
-4. Upload o conteúdo de `out/` para `public_html/`
+## Verificacao pos-deploy
 
-**Opção C — Git (recomendado para atualizações frequentes):**
-1. No hPanel → Advanced → Git
-2. Conecte o repositório CaioFaco74/vogaia-site
-3. Configure para fazer build e copiar `out/` para `public_html/`
+- [ ] https://vogaia.com.br — Home carrega
+- [ ] https://vogaia.com.br/contato/ — formulario aparece
+- [ ] https://vogaia.com.br/posts/ — **NAO** retorna 404 (precisa existir)
+- [ ] Validar alguma imagem recente: https://vogaia.com.br/posts/post_YYYYMMDD_HHMMSS.png
+- [ ] https://vogaia.com.br/sitemap.xml
+- [ ] Navegacao entre paginas
+- [ ] Cookie consent aparece (LGPD)
 
-### 3. Verificação pós-deploy
-- [ ] https://vogaia.com.br carrega a Home
-- [ ] Navegação entre páginas funciona
-- [ ] https://vogaia.com.br/contato/ — formulário aparece
-- [ ] https://vogaia.com.br/sitemap.xml — sitemap carrega
-- [ ] https://vogaia.com.br/robots.txt — robots carrega
-- [ ] Botão WhatsApp funciona
-- [ ] 404: https://vogaia.com.br/pagina-inexistente mostra 404 customizado
-- [ ] SSL/HTTPS funciona (sem mixed content)
+## Se a pasta `/posts/` sumir
 
-### 4. Pós-deploy
-1. Google Search Console: adicionar propriedade vogaia.com.br
-2. Submeter sitemap: https://vogaia.com.br/sitemap.xml
-3. Google Analytics: verificar se GA4 está recebendo dados
-4. Google Business Profile: atualizar URL se necessário
+Se por acidente o deploy rodar sem `--exclude=posts/` e apagar a pasta:
 
-## Estrutura do deploy
+```bash
+# 1. Recriar a pasta no Hostinger
+SSHPASS='Ca221074@' sshpass -e ssh -p 65002 -o StrictHostKeyChecking=no \
+  u564158865@185.245.180.175 \
+  'mkdir -p ~/domains/vogaia.com.br/public_html/posts && \
+   chmod 755 ~/domains/vogaia.com.br/public_html/posts'
+
+# 2. Forcar re-upload da proxima publicacao (cron reupload automatico)
+gcloud compute ssh vogaia-vm --zone=southamerica-east1-b --project=vogaia-prod \
+  --command='/opt/vogaia/growth/run-orchestrator.sh publish --platforms instagram,facebook'
 ```
-public_html/
-├── index.html          ← Home
-├── 404.html            ← Página de erro
-├── robots.txt          ← SEO
-├── sitemap.xml         ← SEO
-├── .htaccess           ← Cache, GZIP, segurança
-├── logo.png            ← Logo
-├── favicon.ico         ← Favicon
-├── _next/              ← Assets (CSS, JS, fonts)
-├── sobre/index.html
-├── servicos/index.html
-├── servicos/atendimento-ia/index.html
-├── servicos/automacao-vendas/index.html
-├── servicos/agentes-ia/index.html
-├── servicos/projetos-customizados/index.html
-├── cases/index.html
-├── cases/*/index.html
-├── blog/index.html
-├── blog/*/index.html
-├── contato/index.html
-├── privacidade/index.html
-└── termos/index.html
-```
+
+O orchestrator detecta 404 nas imagens aprovadas e faz reupload automatico slide a slide antes de publicar no Make.
+
+## Stack
+
+- Next.js 16 (App Router) + Static Export
+- Tailwind CSS 4 / Framer Motion / TypeScript
+- Hostinger Premium Web Hosting
+- Build gera `out/` (19 paginas estaticas)

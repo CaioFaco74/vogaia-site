@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -16,6 +17,47 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   display: "swap",
+});
+
+const GTM_ID = "GTM-NTPCB4JS";
+
+const consentDefault = `
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('consent', 'default', {
+  ad_storage: 'denied',
+  ad_user_data: 'denied',
+  ad_personalization: 'denied',
+  analytics_storage: 'denied',
+  wait_for_update: 500
+});
+gtag('set', 'url_passthrough', true);
+gtag('set', 'ads_data_redaction', true);
+`;
+
+const gtmSnippet = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`;
+
+const orgSchema = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": ["Organization", "LocalBusiness"],
+  name: "VogaIA",
+  url: "https://vogaia.com.br",
+  logo: "https://vogaia.com.br/logo.png",
+  description: "Soluções de inteligência artificial para empresas",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Rua Vicente Leite, 1820",
+    addressLocality: "Fortaleza",
+    addressRegion: "CE",
+    postalCode: "60170-151",
+    addressCountry: "BR",
+  },
+  telephone: "+5585982042293",
+  email: "atendimento@vogaia.com.br",
+  sameAs: [
+    "https://www.linkedin.com/company/vogaia",
+    "https://www.instagram.com/vogaia",
+  ],
 });
 
 export const metadata: Metadata = {
@@ -83,39 +125,30 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
-        {/* Google Search Console */}
         <meta name="google-site-verification" content="aOu2lIVS4u6VUKeWvX825wXXahaKm1bwDD92OD21gj0" />
-        {/* GA4 e Meta Pixel carregados via CookieConsent apos consentimento */}
-        <script
+        <Script id="consent-default" strategy="beforeInteractive">
+          {consentDefault}
+        </Script>
+        <Script id="gtm-loader" strategy="afterInteractive">
+          {gtmSnippet}
+        </Script>
+        <Script
+          id="org-schema"
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": ["Organization", "LocalBusiness"],
-              name: "VogaIA",
-              url: "https://vogaia.com.br",
-              logo: "https://vogaia.com.br/logo.png",
-              description:
-                "Soluções de inteligência artificial para empresas",
-              address: {
-                "@type": "PostalAddress",
-                streetAddress: "Rua Vicente Leite, 1820",
-                addressLocality: "Fortaleza",
-                addressRegion: "CE",
-                postalCode: "60170-151",
-                addressCountry: "BR",
-              },
-              telephone: "+5585982042293",
-              email: "atendimento@vogaia.com.br",
-              sameAs: [
-                "https://www.linkedin.com/company/vogaia",
-                "https://www.instagram.com/vogaia",
-              ],
-            }),
-          }}
-        />
+          strategy="afterInteractive"
+        >
+          {orgSchema}
+        </Script>
       </head>
       <body className="min-h-screen flex flex-col bg-bg-primary text-text-primary font-sans antialiased">
+        <noscript>
+          <iframe
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
