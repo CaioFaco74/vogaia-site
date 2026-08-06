@@ -7,8 +7,8 @@ import { z } from "zod";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/constants";
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react";
-import { trackFormSubmit, trackWhatsAppClick, trackCTAClick } from "@/lib/tracking";
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle, AlertCircle } from "lucide-react";
+import { trackEvent, trackFormSubmit, trackWhatsAppClick, trackCTAClick } from "@/lib/tracking";
 
 const contactSchema = z.object({
   nome: z.string().min(2, "Nome é obrigatório"),
@@ -27,6 +27,16 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
+// Normaliza telefone BR para E.164 (55 + DDD + 9 + 8 dígitos), formato que o Z-API/Ana espera.
+function normalizePhone(raw: string): string {
+  const d = (raw || "").replace(/\D/g, "");
+  if (d.startsWith("55") && d.length === 13) return d;                       // já completo
+  if (d.startsWith("55") && d.length === 12) return d.slice(0, 4) + "9" + d.slice(4); // 55+DDD+8 → insere 9
+  if (d.length === 11) return "55" + d;                                      // DDD+9+8 → add 55
+  if (d.length === 10) return "55" + d.slice(0, 2) + "9" + d.slice(2);       // DDD+8 → add 55 e 9
+  return !d || d.startsWith("55") ? d : "55" + d;                            // fallback
+}
+
 const inputStyles =
   "w-full bg-bg-secondary border border-border-subtle rounded-lg px-4 py-3 text-text-primary placeholder:text-text-disabled focus:outline-none focus:border-orange-primary focus:ring-1 focus:ring-orange-primary transition-colors";
 const labelStyles = "block text-sm font-medium text-text-secondary mb-2";
@@ -34,6 +44,7 @@ const errorStyles = "text-xs text-error mt-1";
 
 export default function ContatoPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const {
     register,
@@ -53,7 +64,7 @@ export default function ContatoPage() {
 
     // Enviar para Make webhook
     try {
-      await fetch(
+      const res = await fetch(
         "https://hook.us1.make.com/lzoiiytwu71gjywwwdc3elog4h8dttsj",
         {
           method: "POST",
@@ -61,16 +72,50 @@ export default function ContatoPage() {
           body: JSON.stringify({
             source: "site_vogaia",
             ...data,
+            telefone: normalizePhone(data.telefone),
             timestamp: new Date().toISOString(),
           }),
         }
       );
-    } catch {
-      // Falha silenciosa — formulário ainda mostra sucesso
-      // O tracking já foi disparado
+      if (!res.ok) throw new Error(`Webhook respondeu ${res.status}`);
+    } catch (err) {
+      // Não perder o lead em silêncio: registra para monitoramento e avisa o usuário,
+      // que ainda tem o WhatsApp como caminho direto.
+      console.error("Falha ao enviar contato para o Make:", err);
+      trackEvent("contato_submit_error", {
+        form_name: "contato",
+        error: err instanceof Error ? err.message : "unknown",
+      });
+      setFailed(true);
+      return;
     }
 
     setSubmitted(true);
+  }
+
+  if (failed) {
+    return (
+      <Section className="pt-32 min-h-screen flex items-center">
+        <div className="text-center max-w-lg mx-auto">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-error/10 mb-6">
+            <AlertCircle size={40} className="text-error" />
+          </div>
+          <h1 className="text-3xl font-bold mb-4">
+            Não conseguimos enviar sua mensagem
+          </h1>
+          <p className="text-text-muted mb-8">
+            Houve uma falha no envio e não queremos que você perca o contato.
+            Fale com a gente direto no WhatsApp — respondemos por lá.
+          </p>
+          <Button
+            href={SITE.whatsappLink}
+            onClick={() => trackWhatsAppClick("contato_form_error")}
+          >
+            Falar no WhatsApp
+          </Button>
+        </div>
+      </Section>
+    );
   }
 
   if (submitted) {
