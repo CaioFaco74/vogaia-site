@@ -111,7 +111,7 @@ export default function DiagnosticoPage() {
           </h1>
           <p className="text-[#B8B8CC] text-lg mb-4">
             Em até 24 horas úteis, entraremos em contato pelo WhatsApp para agendar
-            seu diagnóstico gratuito de 15 minutos.
+            seu diagnóstico gratuito de 30 a 40 minutos.
           </p>
           <p className="text-[#6B6B80] text-sm mb-8">
             Enquanto isso, veja como a IA já funciona em empresas como a sua:
@@ -150,7 +150,7 @@ export default function DiagnosticoPage() {
             </h1>
 
             <p className="text-[#B8B8CC] text-lg mb-10 leading-relaxed">
-              Em 15 minutos, analisamos seus processos e mostramos exatamente onde
+              Em 30 a 40 minutos, analisamos seus processos e mostramos exatamente onde
               agentes de IA podem reduzir custos, acelerar vendas e eliminar
               gargalos operacionais.
             </p>
@@ -162,7 +162,7 @@ export default function DiagnosticoPage() {
                   <Clock size={20} className="text-[#FF6B2B]" />
                 </div>
                 <div>
-                  <p className="text-white font-semibold">15 minutos</p>
+                  <p className="text-white font-semibold">30 a 40 minutos</p>
                   <p className="text-[#6B6B80] text-sm">
                     Conversa rápida e objetiva. Sem enrolação.
                   </p>
@@ -188,7 +188,7 @@ export default function DiagnosticoPage() {
                 <div>
                   <p className="text-white font-semibold">Resultado real</p>
                   <p className="text-[#6B6B80] text-sm">
-                    9 projetos entregues em diferentes setores. Uma indústria de plásticos reduziu o tempo de resposta a leads de 14h para 3min.
+                    Projetos entregues em diferentes setores, entre eles uma indústria de plásticos que passou a responder leads com IA.
                   </p>
                 </div>
               </div>
