@@ -15,12 +15,19 @@ function getConsent(): ConsentStatus {
 function updateGTMConsent(granted: boolean) {
   const w = window as any;
   w.dataLayer = w.dataLayer || [];
-  w.dataLayer.push(["consent", "update", {
+  // O GTM só processa comandos de consentimento vindos de `arguments` (gtag);
+  // um array comum no dataLayer é ignorado e o consentimento fica "denied".
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function gtag(..._args: unknown[]) {
+    // eslint-disable-next-line prefer-rest-params
+    w.dataLayer.push(arguments);
+  }
+  gtag("consent", "update", {
     ad_storage: granted ? "granted" : "denied",
     ad_user_data: granted ? "granted" : "denied",
     ad_personalization: granted ? "granted" : "denied",
     analytics_storage: granted ? "granted" : "denied",
-  }]);
+  });
   w.dataLayer.push({ event: granted ? "consent_accepted" : "consent_rejected" });
 }
 
