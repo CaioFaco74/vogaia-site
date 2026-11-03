@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/constants";
 import { trackEvent, trackMetaEvent } from "@/lib/tracking";
+import { getAttribution, type Attribution } from "@/lib/attribution";
 import { CheckCircle, Zap, Clock, Shield, ArrowRight } from "lucide-react";
 
 const diagnosticoSchema = z.object({
@@ -15,6 +16,7 @@ const diagnosticoSchema = z.object({
   whatsapp: z.string().min(10, "WhatsApp inválido"),
   empresa: z.string().min(2, "Empresa é obrigatória"),
   funcionarios: z.string().min(1, "Selecione uma opção"),
+  comoEncontrou: z.string().optional(),
 });
 
 type DiagnosticoFormData = z.infer<typeof diagnosticoSchema>;
@@ -36,17 +38,16 @@ function normalizePhone(raw: string): string {
 
 export default function DiagnosticoPage() {
   const [submitted, setSubmitted] = useState(false);
-  const [utmParams, setUtmParams] = useState<Record<string, string>>({});
+  const [attribution, setAttribution] = useState<Attribution>({});
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const utms: Record<string, string> = {};
-    ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].forEach((key) => {
-      const val = params.get(key);
-      if (val) utms[key] = val;
-    });
-    setUtmParams(utms);
+    setAttribution(getAttribution());
   }, []);
+
+  // GA4 só aceita valores definidos; descarta chaves vazias da atribuição.
+  const utmParams = Object.fromEntries(
+    Object.entries(attribution).filter(([key, val]) => key.startsWith("utm_") && Boolean(val))
+  ) as Record<string, string>;
 
   const {
     register,
@@ -78,10 +79,10 @@ export default function DiagnosticoPage() {
           body: JSON.stringify({
             source: "diagnostico_ia",
             servico: "diagnostico-ia",
-            comoEncontrou: utmParams.utm_source || "direto",
             ...data,
+            comoEncontrou: data.comoEncontrou || attribution.utm_source || "direto",
             telefone: normalizePhone(data.whatsapp),
-            ...utmParams,
+            ...attribution,
             timestamp: new Date().toISOString(),
           }),
         }
@@ -301,6 +302,25 @@ export default function DiagnosticoPage() {
                 {errors.funcionarios && (
                   <p className={errorStyles}>{errors.funcionarios.message}</p>
                 )}
+              </div>
+
+              <div>
+                <label htmlFor="comoEncontrou" className={labelStyles}>
+                  Como nos conheceu? (opcional)
+                </label>
+                <select
+                  id="comoEncontrou"
+                  className={inputStyles}
+                  {...register("comoEncontrou")}
+                >
+                  <option value="">Selecione</option>
+                  <option value="google">Google</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="indicacao">Indicação</option>
+                  <option value="evento">Evento</option>
+                  <option value="outro">Outro</option>
+                </select>
               </div>
 
               <button

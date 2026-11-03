@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/constants";
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle, AlertCircle } from "lucide-react";
 import { trackEvent, trackFormSubmit, trackWhatsAppClick, trackCTAClick } from "@/lib/tracking";
+import { getAttribution } from "@/lib/attribution";
 
 const contactSchema = z.object({
   nome: z.string().min(2, "Nome é obrigatório"),
@@ -73,6 +74,7 @@ export default function ContatoPage() {
             source: "site_vogaia",
             ...data,
             telefone: normalizePhone(data.telefone),
+            ...getAttribution(),
             timestamp: new Date().toISOString(),
           }),
         }

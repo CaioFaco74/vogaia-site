@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { CookieConsent } from "@/components/cookie-consent";
+import { AttributionCapture } from "@/components/attribution-capture";
 import "./globals.css";
 
 const inter = Inter({
@@ -154,6 +155,7 @@ export default function RootLayout({
         <Footer />
         <WhatsAppButton />
         <CookieConsent />
+        <AttributionCapture />
       </body>
     </html>
   );
