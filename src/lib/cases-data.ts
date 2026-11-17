@@ -9,7 +9,7 @@ export interface CaseStudy {
   desafio: string;
   solucao: string;
   resultados: { metric: string; description: string }[];
-  depoimento: {
+  depoimento?: {
     texto: string;
     nome: string;
     cargo: string;
@@ -66,13 +66,6 @@ export const casesData: CaseStudy[] = [
       { metric: "3", description: "Etapas, todas validadas pelo engenheiro" },
       { metric: "0", description: "Números inventados: todo dado vem da base" },
     ],
-    depoimento: {
-      texto:
-        "A regra de que o sistema nunca inventa número, e sempre consulta a base, eliminou a desconfiança da equipe desde o primeiro dia.",
-      nome: "Diretor de Produto",
-      cargo: "Diretor de Produto",
-      empresa: "Plataforma de Gestão de Obras",
-    },
     timeline: "12 semanas",
   },
   {

@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 
 export function CasePage({ caseData }: { caseData: CaseStudy }) {
+  const { depoimento } = caseData;
+
   return (
     <>
       {/* Hero */}
@@ -119,34 +121,36 @@ export function CasePage({ caseData }: { caseData: CaseStudy }) {
         </div>
       </Section>
 
-      {/* Depoimento */}
-      <Section>
-        <div className="max-w-3xl mx-auto">
-          <Card hover={false} className="relative">
-            <Quote
-              size={40}
-              className="text-orange-primary/20 absolute top-6 right-6"
-            />
-            <MessageSquare size={24} className="text-orange-primary mb-4" />
-            <blockquote className="text-lg md:text-xl leading-relaxed italic text-text-secondary mb-6">
-              &ldquo;{caseData.depoimento.texto}&rdquo;
-            </blockquote>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-orange-subtle rounded-full flex items-center justify-center">
-                <span className="text-orange-primary font-bold text-lg">
-                  {caseData.depoimento.nome.charAt(0)}
-                </span>
+      {/* Depoimento (só quando há frase real e autorizada) */}
+      {depoimento && (
+        <Section>
+          <div className="max-w-3xl mx-auto">
+            <Card hover={false} className="relative">
+              <Quote
+                size={40}
+                className="text-orange-primary/20 absolute top-6 right-6"
+              />
+              <MessageSquare size={24} className="text-orange-primary mb-4" />
+              <blockquote className="text-lg md:text-xl leading-relaxed italic text-text-secondary mb-6">
+                &ldquo;{depoimento.texto}&rdquo;
+              </blockquote>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-orange-subtle rounded-full flex items-center justify-center">
+                  <span className="text-orange-primary font-bold text-lg">
+                    {depoimento.nome.charAt(0)}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-semibold">{depoimento.nome}</p>
+                  <p className="text-sm text-text-muted">
+                    {depoimento.cargo}, {depoimento.empresa}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold">{caseData.depoimento.nome}</p>
-                <p className="text-sm text-text-muted">
-                  {caseData.depoimento.cargo}, {caseData.depoimento.empresa}
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </Section>
+            </Card>
+          </div>
+        </Section>
+      )}
 
       {/* CTA */}
       <Section className="bg-bg-secondary">
