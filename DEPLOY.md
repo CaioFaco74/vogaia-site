@@ -27,12 +27,12 @@ O deploy do site usa `rsync -avz --delete`. **Sem o `--exclude=posts/`**, o rsyn
 cd ~/projetos/vogaia-site
 npm run build
 
-SSHPASS='Ca221074@' sshpass -e rsync -avz --delete \
+SSHPASS="$HOSTINGER_PASSWORD" sshpass -e rsync -avz --delete \
   --exclude=posts/ \
   -e 'ssh -p 65002 -o StrictHostKeyChecking=no' \
   out/ u564158865@185.245.180.175:~/domains/vogaia.com.br/public_html/
 
-SSHPASS='Ca221074@' sshpass -e ssh -p 65002 -o StrictHostKeyChecking=no \
+SSHPASS="$HOSTINGER_PASSWORD" sshpass -e ssh -p 65002 -o StrictHostKeyChecking=no \
   u564158865@185.245.180.175 \
   'find ~/domains/vogaia.com.br/public_html -type d -exec chmod 755 {} \; \
    && find ~/domains/vogaia.com.br/public_html -type f -exec chmod 644 {} \;'
@@ -61,7 +61,7 @@ Se por acidente o deploy rodar sem `--exclude=posts/` e apagar a pasta:
 
 ```bash
 # 1. Recriar a pasta no Hostinger
-SSHPASS='Ca221074@' sshpass -e ssh -p 65002 -o StrictHostKeyChecking=no \
+SSHPASS="$HOSTINGER_PASSWORD" sshpass -e ssh -p 65002 -o StrictHostKeyChecking=no \
   u564158865@185.245.180.175 \
   'mkdir -p ~/domains/vogaia.com.br/public_html/posts && \
    chmod 755 ~/domains/vogaia.com.br/public_html/posts'
