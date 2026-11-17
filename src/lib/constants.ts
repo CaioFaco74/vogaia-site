@@ -13,6 +13,11 @@ export const SITE = {
   },
 } as const;
 
+// Link de agendamento do diagnóstico (HubSpot Meetings), mostrado na tela de obrigado do
+// /diagnostico. Vem da task F0 0.6 ("Link do Meetings ativo"). Enquanto estiver vazio, a tela
+// de obrigado mostra o WhatsApp como próximo passo.
+export const DIAGNOSTICO_AGENDA_URL: string = "";
+
 export const SERVICES = [
   {
     slug: "atendimento-ia",
