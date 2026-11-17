@@ -50,25 +50,25 @@ export const casesData: CaseStudy[] = [
   {
     slug: "planejamento-ia-construcao",
     empresa: "Plataforma de Gestão de Obras",
-    industria: "Construção Civil / SaaS",
+    industria: "Construção Civil",
     servico: "Projetos de IA Customizados",
     servicoSlug: "projetos-customizados",
     resumo:
-      "3 agentes de IA com RAG híbrido sobre 2.000+ obras históricas — reduzindo planejamento de obras de 30 para 15 dias com busca inteligente de referências.",
-    metricaDestaque: { valor: "50%", label: "Redução no tempo de planejamento" },
+      "IA no planejamento de obras sobre mais de 2.000 obras do histórico: mais de 80% de acerto na busca de obras de referência, em 3 etapas validadas pelo engenheiro e sem nenhum número inventado.",
+    metricaDestaque: { valor: ">80%", label: "Acerto na busca de obras similares" },
     desafio:
-      "Plataforma SaaS de gestão Lean para construção civil precisava acelerar o planejamento de novas obras. Cada projeto exigia que engenheiros pesquisassem manualmente referências históricas, montassem cronogramas do zero e estimassem riscos com base na experiência pessoal. O processo levava em média 30 dias e a qualidade dependia do profissional disponível. Com mais de 2.000 obras no histórico, havia uma riqueza de dados que ninguém conseguia aproveitar — expertise concentrada em poucos profissionais sêniores.",
+      "Uma empresa de tecnologia para gestão de obras precisava acelerar o planejamento de novas obras. Cada projeto exigia que engenheiros pesquisassem à mão referências históricas, montassem cronogramas do zero e estimassem riscos com base na experiência pessoal. A qualidade dependia do profissional disponível. Com mais de 2.000 obras no histórico, havia uma riqueza de dados que ninguém conseguia aproveitar, e a experiência ficava concentrada em poucos profissionais seniores. Em obra, número errado custa caro: a solução não podia correr o risco de chutar um valor num orçamento ou num cronograma.",
     solucao:
-      "Desenvolvemos 3 agentes especializados orquestrados em sequência com checkpoints de validação humana: (1) Descobridor de Obras Similares usa busca híbrida BM25 + semântica + re-ranker sobre o banco vetorial para encontrar as 5 obras mais relevantes; (2) Parametrizador Inteligente gera EAP, cronograma e linha de balanço adaptados a partir da obra de referência aprovada; (3) Preditor de Riscos analisa histórico de problemas em obras similares e gera alertas com plano de mitigação em formato 5W2H. O engenheiro valida cada etapa antes de avançar — os agentes propõem, o humano decide. Todo dado numérico é buscado via tool obrigatória, eliminando alucinações.",
+      "Colocamos a IA para trabalhar em 3 etapas, com validação do engenheiro ao fim de cada uma: (1) busca das obras mais parecidas no histórico, para o planejamento partir de uma referência real e não de uma folha em branco; (2) montagem do plano a partir da obra de referência aprovada, com EAP, cronograma e linha de balanço adaptados; (3) leitura dos riscos registrados em obras semelhantes, com alertas e plano de mitigação. A IA propõe, o engenheiro decide. E a regra mais importante do projeto: o sistema nunca inventa número. Todo dado vem da base de obras da empresa.",
     resultados: [
-      { metric: "50%", description: "Redução no tempo de planejamento (30d → 15d)" },
-      { metric: ">80%", description: "Hit Rate na busca de obras similares" },
-      { metric: "0%", description: "Alucinações numéricas (tool obrigatória)" },
-      { metric: "108%", description: "ROI estimado no primeiro ano" },
+      { metric: ">80%", description: "Acerto na busca de obras similares" },
+      { metric: "2.000+", description: "Obras do histórico usadas como referência" },
+      { metric: "3", description: "Etapas, todas validadas pelo engenheiro" },
+      { metric: "0", description: "Números inventados: todo dado vem da base" },
     ],
     depoimento: {
       texto:
-        "A busca híbrida foi o que desbloqueou o valor. Termos técnicos como EAP e PPCQ precisam de busca exata, mas quando o engenheiro pede 'uma obra parecida', precisa de semântica. E a regra de que o agente nunca inventa número — sempre consulta a base — eliminou a desconfiança da equipe desde o primeiro dia.",
+        "A regra de que o sistema nunca inventa número, e sempre consulta a base, eliminou a desconfiança da equipe desde o primeiro dia.",
       nome: "Diretor de Produto",
       cargo: "Diretor de Produto",
       empresa: "Plataforma de Gestão de Obras",
