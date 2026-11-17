@@ -1,21 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { SITE } from "@/lib/constants";
-import { trackEvent, trackMetaEvent } from "@/lib/tracking";
+import { DIAGNOSTICO_AGENDA_URL, SITE } from "@/lib/constants";
+import { trackEvent, trackMetaEvent, trackWhatsAppClick } from "@/lib/tracking";
 import { getAttribution, type Attribution } from "@/lib/attribution";
-import { CheckCircle, Zap, Clock, Shield, ArrowRight } from "lucide-react";
+import { createLeadId, submitDiagnostico } from "@/lib/diagnostico-submit";
+import { AlertCircle, CalendarCheck, CheckCircle, Zap, Clock, Shield, ArrowRight } from "lucide-react";
+
+const CARGO_OPTIONS = [
+  { value: "socio-ceo", label: "Sócio(a) / CEO" },
+  { value: "diretor", label: "Diretor(a)" },
+  { value: "gerente-coordenador", label: "Gerente / Coordenador(a)" },
+  { value: "analista-tecnico", label: "Analista / Técnico(a)" },
+  { value: "outro", label: "Outro" },
+] as const;
+
+const PROCESSO_OPTIONS = [
+  { value: "atendimento", label: "Atendimento ao cliente" },
+  { value: "vendas", label: "Vendas e prospecção" },
+  { value: "operacao", label: "Operação / produção" },
+  { value: "financeiro-administrativo", label: "Financeiro / administrativo" },
+  { value: "marketing", label: "Marketing e conteúdo" },
+  { value: "nao-sei", label: "Ainda não sei" },
+] as const;
 
 const diagnosticoSchema = z.object({
   nome: z.string().min(2, "Nome é obrigatório"),
   email: z.string().email("Email inválido"),
   whatsapp: z.string().min(10, "WhatsApp inválido"),
   empresa: z.string().min(2, "Empresa é obrigatória"),
+  cargo: z.string().min(1, "Selecione seu cargo"),
   funcionarios: z.string().min(1, "Selecione uma opção"),
+  processo: z.string().min(1, "Selecione um processo"),
   comoEncontrou: z.string().optional(),
 });
 
@@ -37,17 +57,11 @@ function normalizePhone(raw: string): string {
 }
 
 export default function DiagnosticoPage() {
-  const [submitted, setSubmitted] = useState(false);
-  const [attribution, setAttribution] = useState<Attribution>({});
-
-  useEffect(() => {
-    setAttribution(getAttribution());
-  }, []);
-
-  // GA4 só aceita valores definidos; descarta chaves vazias da atribuição.
-  const utmParams = Object.fromEntries(
-    Object.entries(attribution).filter(([key, val]) => key.startsWith("utm_") && Boolean(val))
-  ) as Record<string, string>;
+  const [status, setStatus] = useState<"idle" | "error" | "success">("idle");
+  // Um lead_id por visita ao formulário, reaproveitado em nova tentativa após falha: se o
+  // 1º envio chegou ao Make e só a resposta se perdeu, o Make/HubSpot deduplicam pelo lead_id.
+  // O estado não é serializado no export estático; o valor que vale é o gerado no browser.
+  const [leadId] = useState<string>(() => createLeadId());
 
   const {
     register,
@@ -58,49 +72,50 @@ export default function DiagnosticoPage() {
   });
 
   async function onSubmit(data: DiagnosticoFormData) {
-    // GA4 + Meta Pixel
-    trackEvent("diagnostico_submit", {
-      form_name: "diagnostico",
-      company_size: data.funcionarios,
-      ...utmParams,
-    });
-    trackMetaEvent("Lead", {
-      content_name: "Diagnostico IA",
-      content_category: "diagnostico",
-    });
+    setStatus("idle");
 
-    // Enviar para Make webhook (mesmo do contato)
-    try {
-      const res = await fetch(
-        "https://hook.us1.make.com/lzoiiytwu71gjywwwdc3elog4h8dttsj",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            source: "diagnostico_ia",
-            servico: "diagnostico-ia",
-            ...data,
-            comoEncontrou: data.comoEncontrou || attribution.utm_source || "direto",
-            telefone: normalizePhone(data.whatsapp),
-            ...attribution,
-            timestamp: new Date().toISOString(),
-          }),
-        }
-      );
-      if (!res.ok) throw new Error(`Webhook respondeu ${res.status}`);
-    } catch (err) {
-      // Não perder o lead em silêncio: registra para monitoramento (GA4/alertas)
-      console.error("Falha ao enviar diagnóstico para o Make:", err);
-      trackEvent("diagnostico_submit_error", {
-        form_name: "diagnostico",
-        error: err instanceof Error ? err.message : "unknown",
-      });
+    // Atribuição lida no envio (sessionStorage gravado pelo AttributionCapture na 1ª página).
+    const attribution: Attribution = getAttribution();
+    // GA4 só aceita valores definidos; descarta chaves vazias da atribuição.
+    const utmParams = Object.fromEntries(
+      Object.entries(attribution).filter(([key, val]) => key.startsWith("utm_") && Boolean(val))
+    ) as Record<string, string>;
+
+    // Envia ao Make (mesmo webhook do contato). A conversão (GA4/Ads + Meta Lead) só é
+    // registrada dentro de submitDiagnostico, depois de uma resposta 2xx.
+    const result = await submitDiagnostico(
+      {
+        leadId,
+        payload: {
+          source: "diagnostico_ia",
+          servico: "diagnostico-ia",
+          ...data,
+          comoEncontrou: data.comoEncontrou || attribution.utm_source || "direto",
+          telefone: normalizePhone(data.whatsapp),
+          ...attribution,
+          timestamp: new Date().toISOString(),
+        },
+        conversionParams: {
+          company_size: data.funcionarios,
+          job_role: data.cargo,
+          process_interest: data.processo,
+          ...utmParams,
+        },
+      },
+      { fetchImpl: fetch, trackEvent, trackMetaEvent }
+    );
+
+    if (!result.ok) {
+      console.error("Falha ao enviar diagnóstico para o Make:", result.error);
+      setStatus("error");
+      return;
     }
 
-    setSubmitted(true);
+    setStatus("success");
   }
 
-  if (submitted) {
+  if (status === "success") {
+    const hasAgenda = DIAGNOSTICO_AGENDA_URL.length > 0;
     return (
       <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center px-6">
         <div className="text-center max-w-lg">
@@ -110,10 +125,40 @@ export default function DiagnosticoPage() {
           <h1 className="text-3xl font-bold text-white mb-4">
             Recebemos seu pedido!
           </h1>
-          <p className="text-[#B8B8CC] text-lg mb-4">
-            Em até 24 horas úteis, entraremos em contato pelo WhatsApp para agendar
-            seu diagnóstico gratuito de 30 a 40 minutos.
-          </p>
+
+          {hasAgenda ? (
+            <div className="bg-[#111118] border border-[#2A2A3A] rounded-2xl p-6 mb-6">
+              <p className="text-white font-semibold text-lg mb-2">
+                Escolha agora o melhor horário
+              </p>
+              <p className="text-[#B8B8CC] mb-5">
+                Marque seu diagnóstico gratuito de 30 a 40 minutos direto na agenda.
+              </p>
+              <Button
+                href={DIAGNOSTICO_AGENDA_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  trackEvent("diagnostico_agenda_click", {
+                    form_name: "diagnostico",
+                    lead_id: leadId,
+                  })
+                }
+              >
+                <CalendarCheck size={18} />
+                Agendar meu diagnóstico
+              </Button>
+              <p className="text-[#6B6B80] text-sm mt-4">
+                Se preferir, entramos em contato pelo WhatsApp em até 24 horas úteis.
+              </p>
+            </div>
+          ) : (
+            <p className="text-[#B8B8CC] text-lg mb-4">
+              Em até 24 horas úteis, entraremos em contato pelo WhatsApp para agendar
+              seu diagnóstico gratuito de 30 a 40 minutos.
+            </p>
+          )}
+
           <p className="text-[#6B6B80] text-sm mb-8">
             Enquanto isso, veja como a IA já funciona em empresas como a sua:
           </p>
@@ -284,6 +329,23 @@ export default function DiagnosticoPage() {
               </div>
 
               <div>
+                <label htmlFor="cargo" className={labelStyles}>
+                  Seu cargo *
+                </label>
+                <select id="cargo" className={inputStyles} {...register("cargo")}>
+                  <option value="">Selecione</option>
+                  {CARGO_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.cargo && (
+                  <p className={errorStyles}>{errors.cargo.message}</p>
+                )}
+              </div>
+
+              <div>
                 <label htmlFor="funcionarios" className={labelStyles}>
                   Número de funcionários *
                 </label>
@@ -301,6 +363,23 @@ export default function DiagnosticoPage() {
                 </select>
                 {errors.funcionarios && (
                   <p className={errorStyles}>{errors.funcionarios.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="processo" className={labelStyles}>
+                  Qual processo quer resolver primeiro? *
+                </label>
+                <select id="processo" className={inputStyles} {...register("processo")}>
+                  <option value="">Selecione</option>
+                  {PROCESSO_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.processo && (
+                  <p className={errorStyles}>{errors.processo.message}</p>
                 )}
               </div>
 
@@ -323,6 +402,34 @@ export default function DiagnosticoPage() {
                 </select>
               </div>
 
+              {status === "error" && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-3 rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-left"
+                >
+                  <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="text-white font-semibold mb-1">
+                      Não conseguimos enviar seu pedido
+                    </p>
+                    <p className="text-[#B8B8CC]">
+                      Seus dados continuam aqui. Tente de novo ou fale com a gente direto
+                      no{" "}
+                      <a
+                        href={SITE.whatsappLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#FF6B2B] hover:underline"
+                        onClick={() => trackWhatsAppClick("diagnostico_form_error")}
+                      >
+                        WhatsApp
+                      </a>
+                      .
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -332,7 +439,7 @@ export default function DiagnosticoPage() {
                   "Enviando..."
                 ) : (
                   <>
-                    QUERO MEU DIAGNÓSTICO
+                    {status === "error" ? "TENTAR DE NOVO" : "QUERO MEU DIAGNÓSTICO"}
                     <ArrowRight size={20} />
                   </>
                 )}
