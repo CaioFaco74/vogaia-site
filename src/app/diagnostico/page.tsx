@@ -74,7 +74,8 @@ export default function DiagnosticoPage() {
   async function onSubmit(data: DiagnosticoFormData) {
     setStatus("idle");
 
-    // Atribuição lida no envio (sessionStorage gravado pelo AttributionCapture na 1ª página).
+    // Atribuição lida no envio, gravada pelo AttributionCapture: UTMs + gclid/gbraid/wbraid,
+    // 1º e último toque (90 dias com consentimento; só a visita sem ele). Vai inteira ao Make.
     const attribution: Attribution = getAttribution();
     // GA4 só aceita valores definidos; descarta chaves vazias da atribuição.
     const utmParams = Object.fromEntries(
