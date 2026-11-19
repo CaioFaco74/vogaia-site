@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { applyAttributionConsent, CONSENT_STORAGE_KEY } from "@/lib/attribution";
 
-const CONSENT_KEY = "vogaia-cookie-consent";
+const CONSENT_KEY = CONSENT_STORAGE_KEY;
 
 type ConsentStatus = "accepted" | "rejected" | null;
 
@@ -49,12 +50,16 @@ export function CookieConsent() {
     localStorage.setItem(CONSENT_KEY, "accepted");
     setVisible(false);
     updateGTMConsent(true);
+    // Atribuição (I-2): com consentimento, o registro da visita passa a valer por 90 dias.
+    applyAttributionConsent(true);
   }
 
   function reject() {
     localStorage.setItem(CONSENT_KEY, "rejected");
     setVisible(false);
     updateGTMConsent(false);
+    // Atribuição (I-2): sem consentimento, apaga o registro persistido e mantém só o da visita.
+    applyAttributionConsent(false);
   }
 
   if (!visible) return null;
